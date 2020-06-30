@@ -105,6 +105,7 @@ class FargateCdkStack(core.Stack):
             )
         )
 
+        #TODO: try to assign public ip and browse directly
         service2_fargateservice = ecs.FargateService(self, 'Service2FargateService',
             task_definition=task_definition_2,
             assign_public_ip=False,
@@ -125,13 +126,6 @@ class FargateCdkStack(core.Stack):
             internet_facing=True
         )
 
-        # Add listen to ALB
-        # alblistener = elb.ApplicationListener(self, 'webALB-Listener',
-        #     load_balancer=alb,
-        #     default_target_groups=[service_1_tg],
-        #     port=80
-        # )
-
         #Add target group 1 to ALB
         service_1_tg = elb.ApplicationTargetGroup(self, 'Service1TargetGroup',
             port=80,
@@ -150,8 +144,8 @@ class FargateCdkStack(core.Stack):
             vpc=vpc,
             target_type=elb.TargetType.IP,
             target_group_name='Service2TG',
-            targets=[service1_fargateservice.load_balancer_target(
-                container_name='Service1Container',
+            targets=[service2_fargateservice.load_balancer_target(
+                container_name='Service2Container',
                 container_port=80
             )]
         )
@@ -176,23 +170,4 @@ class FargateCdkStack(core.Stack):
             listener=alblistener,
             target_groups=[service_2_tg]
         )
-
-        # alblistener.add_targets('Service1Target',
-        #     port=80,
-        #     targets=service1_fargateservice.load_balancer_target(
-        #         container_name='Service1Container',
-        #         container_port=80
-        #     ),
-        #     path_pattern='/service1'
-        # )
-
-        # alblistener.add_targets('Service2Target',
-        #     port=80,
-        #     targets=service2_fargateservice.load_balancer_target(
-        #         container_name='Service2Container',
-        #         container_port=80
-        #     ),
-        #     path_pattern='/service2'
-        # )
-
 

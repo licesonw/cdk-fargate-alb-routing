@@ -1,13 +1,18 @@
 # Some variables to configure
 
 ecr_repos = [
-    'custom-nginx',
-    'custom-nginx-2'
+    'service1-nginx',
+    'service2-nginx'
 ]
 
 paths = [
     '/service1/*',
     '/service2/*'
+]
+
+num_tasks = [
+    2,
+    2
 ]
 
 cidr = '10.0.0.0/16'
