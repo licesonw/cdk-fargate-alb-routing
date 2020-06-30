@@ -1,0 +1,18 @@
+{
+    "region": "eu-central-1",
+    "cidr": "10.0.0.0/16",
+    "containers": [
+        {
+            "service_name": "service1",
+            "ecr_repo": "service1-nginx",
+            "alb_routing_path": "/service1/*",
+            "tasks": 2
+        },
+        {
+            "service_name": "service2",
+            "ecr_repo": "service2-nginx",
+            "alb_routing_path": "/service2/*",
+            "tasks": 3
+        }
+    ]
+}
