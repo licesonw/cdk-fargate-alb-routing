@@ -3,6 +3,10 @@
 
 This CDK app allows you to easily define ECR repositories with Docker images and deploy them with AWS Fargate behind an Application Load Balancer with path-based routing.
 
+## Architecture
+
+![architecture](images/cdk-fargate-architecture.png)
+
 ## Getting started
 
 First, set up the configuration file `fargate_config.json` to pass the parameters of your microservices application. You can define the following parameters:
