@@ -60,7 +60,7 @@ COPY nginx.conf /etc/nginx/conf.d/
 COPY . /usr/share/nginx/html
 ```
 
-Then, push you images to ECR following [this](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) tutorial.
+Then, push your images to ECR following [this](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) tutorial.
 
 Finally, deploy the stack with the CDK command.
 ```bash
