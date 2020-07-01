@@ -41,6 +41,12 @@ The structure of the file is as follows:
 }
 ```
 
+Finally, deploy the stack with the CDK command.
+```bash
+# Deploy the stack
+cdk deploy
+```
+
 ## Set up some sample Docker images
 Make sure that you container serves the content in the corresponding path. To try out this infrastructure quickly, you can set up a several ngninx images that serve a static HTML page. To serve a single static file from all URL paths, copy a different `index.html` to `/usr/share/nginx/html` for each Docker image and configure nginx as:
 ```nginx
@@ -62,12 +68,6 @@ COPY . /usr/share/nginx/html
 ```
 
 Then, push your images to ECR following [this](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) tutorial.
-
-Finally, deploy the stack with the CDK command.
-```bash
-# Deploy the stack
-cdk deploy
-```
 
 ## Further reading
 * https://docs.aws.amazon.com/elasticloadbalancing/latest/application/tutorial-load-balancer-routing.html
