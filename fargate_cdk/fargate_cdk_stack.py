@@ -11,9 +11,14 @@ from aws_cdk import (
     aws_iam as iam,
     aws_ecr as ecr,
 )
-import sys
-sys.path.insert(1, '../')
-import vars
+import json
+# import sys
+# sys.path.insert(1, '../')
+# import vars
+
+with open('./fargate_config.json') as f:
+    config = json.load(f)
+
 
 
 class FargateCdkStack(core.Stack):
@@ -22,7 +27,7 @@ class FargateCdkStack(core.Stack):
         super().__init__(scope, id, **kwargs)
 
         vpc = ec2.Vpc(self, 'CDKVPC',
-            cidr=vars.cidr
+            cidr=config['cidr']
         )
 
         # SG for ELB
@@ -38,9 +43,24 @@ class FargateCdkStack(core.Stack):
             peer=ec2.Peer.ipv4('0.0.0.0/0'),
             connection=ec2.Port.tcp(443)
         )
-
         
+        # Create ALB
+        alb = elb.ApplicationLoadBalancer(self, 'webALB-public',
+            vpc=vpc,
+            load_balancer_name='webALB-public',
+            security_group=webSG,
+            internet_facing=True
+        )
 
+        alblistener = alb.add_listener('webALB-Listener', 
+            port=80, 
+            open=True,
+            default_action=elb.ListenerAction.fixed_response(
+                status_code=200,
+                content_type='text/plain',
+                message_body='Default action'
+            )
+        )
 
 
 
@@ -60,114 +80,50 @@ class FargateCdkStack(core.Stack):
             cluster_name='FargateCluster',
         )
 
-        # Microservice 1
-        service1_ecr_repo = ecr.Repository.from_repository_name(self, 'Service1Repo', vars.ecr_repos[0])
-        task_definition_1 = ecs.FargateTaskDefinition(self, 'Service1TaskDefinition',
-            cpu=1024,
-            memory_limit_mib=2048
-        )
-        service1_container = task_definition_1.add_container('Service1Container',
-            image=ecs.ContainerImage.from_ecr_repository(service1_ecr_repo),
-            environment={"region": vars.region}
-        )
-        service1_container.add_port_mappings(
-            ecs.PortMapping(
-                container_port=80,
-                host_port=80
+        # Create fargate resources
+        services = []
+        target_groups = []
+        for indx, container in enumerate(config['containers']):
+            ecr_repo = ecr.Repository.from_repository_name(self, 'ServiceRepo'+str(indx), container['ecr_repo'])
+            task_definition = ecs.FargateTaskDefinition(self, 'ServiceTaskDefinition'+str(indx),
+                cpu=1024,
+                memory_limit_mib=2048
             )
-        )
-
-        service1_fargateservice = ecs.FargateService(self, 'Service1FargateService',
-            task_definition=task_definition_1,
-            assign_public_ip=False,
-            security_group=fargateSG,
-            vpc_subnets=ec2.SubnetSelection(subnets=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE).subnets),
-            cluster=fargate_cluster,
-            desired_count=2
-        )
-        # service1_fargateservice.attach_to_application_target_group(service_1_tg)
-
-
-        # Microservice 2
-        service2_ecr_repo = ecr.Repository.from_repository_name(self, 'Service2Repo', vars.ecr_repos[1])
-        task_definition_2 = ecs.FargateTaskDefinition(self, 'Service2TaskDefinition',
-            cpu=1024,
-            memory_limit_mib=2048
-        )
-        service2_container = task_definition_2.add_container('Service2Container',
-            image=ecs.ContainerImage.from_ecr_repository(service2_ecr_repo),
-            environment={"region": vars.region}
-        )
-        service2_container.add_port_mappings(
-            ecs.PortMapping(
-                container_port=80,
-                host_port=80
+            cont = task_definition.add_container('ServiceContainer'+str(indx),
+                image=ecs.ContainerImage.from_ecr_repository(ecr_repo),
+                environment={"region": config['region']}
             )
-        )
+            cont.add_port_mappings(
+                ecs.PortMapping(
+                    container_port=80,
+                    host_port=80
+                )
+            )
+            service = ecs.FargateService(self, 'ServiceFargateService'+str(indx),
+                task_definition=task_definition,
+                assign_public_ip=False,
+                security_group=fargateSG,
+                vpc_subnets=ec2.SubnetSelection(subnets=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE).subnets),
+                cluster=fargate_cluster,
+                desired_count=container['num_tasks']
+            )
+            services.append(service)
 
-        #TODO: try to assign public ip and browse directly
-        service2_fargateservice = ecs.FargateService(self, 'Service2FargateService',
-            task_definition=task_definition_2,
-            assign_public_ip=False,
-            security_group=fargateSG,
-            vpc_subnets=ec2.SubnetSelection(subnets=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE).subnets),
-            cluster=fargate_cluster,
-            desired_count=2
-        )
+            target_group = elb.ApplicationTargetGroup(self, 'ServiceTargetGroup'+str(indx),
+                port=80,
+                vpc=vpc,
+                target_type=elb.TargetType.IP,
+                target_group_name=container['service_name']+'TargetGroup',
+                targets=[service.load_balancer_target(
+                    container_name='ServiceContainer'+str(indx),
+                    container_port=80
+                )]
+            )
+            target_groups.append(target_group)
 
-
-
-        # ALB
-        # Create ALB
-        alb = elb.ApplicationLoadBalancer(self, 'webALB-public',
-            vpc=vpc,
-            load_balancer_name='webALB-public',
-            security_group=webSG,
-            internet_facing=True
-        )
-
-        #Add target group 1 to ALB
-        service_1_tg = elb.ApplicationTargetGroup(self, 'Service1TargetGroup',
-            port=80,
-            vpc=vpc,
-            target_type=elb.TargetType.IP,
-            target_group_name='Service1TG',
-            targets=[service1_fargateservice.load_balancer_target(
-                container_name='Service1Container',
-                container_port=80
-            )]
-        )
-
-        # Add target group 2 to ALB
-        service_2_tg = elb.ApplicationTargetGroup(self, 'Service2TargetGroup',
-            port=80,
-            vpc=vpc,
-            target_type=elb.TargetType.IP,
-            target_group_name='Service2TG',
-            targets=[service2_fargateservice.load_balancer_target(
-                container_name='Service2Container',
-                container_port=80
-            )]
-        )
-
-        
-        alblistener = alb.add_listener('webALB-Listener', 
-            port=80, 
-            open=True,
-            default_target_groups=[service_1_tg]
-        )
-
-        alblistenerrule_1 = elb.ApplicationListenerRule(self, 'webALB-ListenerRule1',
-            path_pattern=vars.paths[0],
-            priority=1,
-            listener=alblistener,
-            target_groups=[service_1_tg]
-        )
-
-        alblistenerrule_2 = elb.ApplicationListenerRule(self, 'webALB-ListenerRule2',
-            path_pattern=vars.paths[1],
-            priority=2,
-            listener=alblistener,
-            target_groups=[service_2_tg]
-        )
-
+            alblistenerrule = elb.ApplicationListenerRule(self, 'ListenerRule'+str(indx),
+                path_pattern=container['alb_routing_path'],
+                priority=indx+1,
+                listener=alblistener,
+                target_groups=[target_group]
+            )
