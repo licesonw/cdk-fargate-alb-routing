@@ -1,7 +1,7 @@
 
 # Path-based microservices routing with ALB and AWS Fargate
 
-This CDK app allows you to easily define ECR repositories with Docker images and deploy them with AWS Fargate behind an Application Load Balancer with path-based routing.
+This CDK app allows you to easily deploy Docker images that reside in ECR with AWS Fargate behind an Application Load Balancer with path-based routing.
 
 ## Architecture
 
