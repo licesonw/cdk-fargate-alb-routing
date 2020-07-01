@@ -1,7 +1,7 @@
 {
     "region": "eu-central-1",
     "cidr": "10.0.0.0/16",
-    "containers": [
+    "services": [
         {
             "service_name": "service1",
             "ecr_repo": "service1-nginx",

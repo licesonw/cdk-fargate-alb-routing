@@ -74,10 +74,10 @@ class FargateCdkStack(core.Stack):
         # Create fargate resources for each microservice
         services = []
         target_groups = []
-        for indx, container in enumerate(config['containers']):
+        for indx, s in enumerate(config['services']):
 
             # Get ECR repository from name
-            ecr_repo = ecr.Repository.from_repository_name(self, 'ServiceRepo'+str(indx), container['ecr_repo'])
+            ecr_repo = ecr.Repository.from_repository_name(self, 'ServiceRepo'+str(indx), s['ecr_repo'])
 
             # Create task definition and add the container from ECR
             task_definition = ecs.FargateTaskDefinition(self, 'ServiceTaskDefinition'+str(indx),
@@ -102,7 +102,7 @@ class FargateCdkStack(core.Stack):
                 security_group=fargateSG,
                 vpc_subnets=ec2.SubnetSelection(subnets=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE).subnets),
                 cluster=fargate_cluster,
-                desired_count=container['num_tasks']
+                desired_count=s['num_tasks']
             )
             services.append(service)
 
@@ -111,7 +111,7 @@ class FargateCdkStack(core.Stack):
                 port=80,
                 vpc=vpc,
                 target_type=elb.TargetType.IP,
-                target_group_name=container['service_name']+'TargetGroup',
+                target_group_name=s['service_name']+'TargetGroup',
                 targets=[service.load_balancer_target(
                     container_name='ServiceContainer'+str(indx),
                     container_port=80
@@ -121,7 +121,7 @@ class FargateCdkStack(core.Stack):
 
             # Add the path pattern rule for the listener
             alblistenerrule = elb.ApplicationListenerRule(self, 'ListenerRule'+str(indx),
-                path_pattern=container['alb_routing_path'],
+                path_pattern=s['alb_routing_path'],
                 priority=indx+1,
                 listener=alblistener,
                 target_groups=[target_group]

@@ -12,7 +12,7 @@ This CDK app allows you to easily deploy Docker images that reside in ECR with A
 First, set up the configuration file `fargate_config.json` to pass the parameters of your microservices application. You can define the following parameters:
 
 * `"cidr"`: The cidr block for the VPC that is created for the cluster
-* `"containers"`: An array of container objects, each container defines one of your dockerized microservices
+* `"services"`: An array of service objects, each service defines one of your dockerized microservices
 * `"service_name"`: The name of the microservice
 * `"ecr_repo"`: The name of the ECR repository where the Docker images resides. The app will always take the `:latest` tag, unless specified otherwise.
 * `"alb_routing_path"`: The URL path that defines to which service the load balancer will route the request
@@ -24,7 +24,7 @@ The structure of the file is as follows:
 {
     "region": "eu-central-1",
     "cidr": "10.0.0.0/16",
-    "containers": [
+    "services": [
         {
             "service_name": "service1",
             "ecr_repo": "service1-nginx",
