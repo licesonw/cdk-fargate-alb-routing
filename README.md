@@ -44,3 +44,7 @@ Finally, deploy the stack with the CDK command.
 cdk deploy
 ```
 
+## Further reading
+* https://docs.aws.amazon.com/elasticloadbalancing/latest/application/tutorial-load-balancer-routing.html
+* ...
+
