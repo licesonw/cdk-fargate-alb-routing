@@ -41,6 +41,16 @@ The structure of the file is as follows:
 }
 ```
 
+Make sure that you container serves the content in the corresponding path. To try out this infrastructure, you can set up a ngninx container that serves a static HTML page. To serve a single static file from all URL paths, configure nginx as:
+```
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    location / {
+        try_files /index.html /index.html;
+    }
+}
+```
 
 Finally, deploy the stack with the CDK command.
 ```
