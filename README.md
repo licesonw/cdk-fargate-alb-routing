@@ -5,7 +5,17 @@ This CDK app allows you to easily define ECR repositories with Docker images and
 
 ## Getting started
 
-First, set up the configuration file `fargate_config.json` to pass the parameters of your microservices application. The structure of the file is as follows:
+First, set up the configuration file `fargate_config.json` to pass the parameters of your microservices application. You can define the following parameters:
+
+* `"cidr"`: The cidr block for the VPC that is created for the cluster
+* `"containers"`: An array of container objects, each container defines one of your dockerized microservices
+* `"service_name"`: The name of the microservice
+* `"ecr_repo"`: The name of the ECR repository where the Docker images resides. The app will always take the `:latest` tag, unless specified otherwise.
+* `"alb_routing_path"`: The URL path that defines to which service the load balancer will route the request
+* `"num_tasks"`: The number of desired tasks per service
+
+
+The structure of the file is as follows:
 ```
 {
     "region": "eu-central-1",
@@ -27,6 +37,8 @@ First, set up the configuration file `fargate_config.json` to pass the parameter
 }
 ```
 
+
+Finally, deploy the stack with the CDK command.
 ```
 # Deploy the stack
 cdk deploy
