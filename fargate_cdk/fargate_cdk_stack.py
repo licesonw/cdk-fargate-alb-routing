@@ -2,13 +2,7 @@ from aws_cdk import (
     core, 
     aws_ec2 as ec2, 
     aws_elasticloadbalancingv2 as elb, 
-    aws_route53 as r53, 
-    aws_route53_targets as alias, 
-    aws_rds as rds, 
-    aws_secretsmanager as sm,
-    aws_certificatemanager as acm,
     aws_ecs as ecs,
-    aws_iam as iam,
     aws_ecr as ecr,
 )
 import json
