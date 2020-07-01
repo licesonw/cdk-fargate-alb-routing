@@ -48,7 +48,7 @@ cdk deploy
 ```
 
 ## Set up some sample Docker images
-Make sure that you container serves the content in the corresponding path. To try out this infrastructure quickly, you can set up a several ngninx images that serve a static HTML page. To serve a single static file from all URL paths, copy a different `index.html` to `/usr/share/nginx/html` for each Docker image and configure nginx as:
+Make sure that your container serves the content in the corresponding path. To try out this infrastructure quickly, you can set up a several ngninx images that serve a static HTML page. To serve a single static file from all URL paths, copy a different `index.html` to `/usr/share/nginx/html` for each Docker image and configure nginx as:
 ```nginx
 server {
     listen 80;
