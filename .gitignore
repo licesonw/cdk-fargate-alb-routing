@@ -11,4 +11,4 @@ cdk.out
 
 # VSCode
 .vscode
-
+.DS_STORE
