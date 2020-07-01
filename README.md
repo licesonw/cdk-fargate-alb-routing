@@ -20,7 +20,7 @@ First, set up the configuration file `fargate_config.json` to pass the parameter
 
 
 The structure of the file is as follows:
-```
+```json
 {
     "region": "eu-central-1",
     "cidr": "10.0.0.0/16",
@@ -42,7 +42,7 @@ The structure of the file is as follows:
 ```
 
 Make sure that you container serves the content in the corresponding path. To try out this infrastructure, you can set up a ngninx container that serves a static HTML page. To serve a single static file from all URL paths, configure nginx as:
-```
+```nginx
 server {
     listen 80;
     root /usr/share/nginx/html;
@@ -53,7 +53,7 @@ server {
 ```
 
 Finally, deploy the stack with the CDK command.
-```
+```bash
 # Deploy the stack
 cdk deploy
 ```
