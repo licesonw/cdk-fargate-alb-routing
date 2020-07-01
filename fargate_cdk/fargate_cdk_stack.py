@@ -6,13 +6,10 @@ from aws_cdk import (
     aws_ecr as ecr,
 )
 import json
-# import sys
-# sys.path.insert(1, '../')
-# import vars
 
+# Read config file
 with open('./fargate_config.json') as f:
     config = json.load(f)
-
 
 
 class FargateCdkStack(core.Stack):
@@ -20,6 +17,7 @@ class FargateCdkStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
+        # Set up VPC
         vpc = ec2.Vpc(self, 'CDKVPC',
             cidr=config['cidr']
         )
@@ -46,6 +44,7 @@ class FargateCdkStack(core.Stack):
             internet_facing=True
         )
 
+        # Add listener at port 80 with default action
         alblistener = alb.add_listener('webALB-Listener', 
             port=80, 
             open=True,
@@ -55,8 +54,6 @@ class FargateCdkStack(core.Stack):
                 message_body='Default action'
             )
         )
-
-
 
         # SG for ECS Fargate
         fargateSG = ec2.SecurityGroup(self, 'fargateSG',
@@ -74,11 +71,15 @@ class FargateCdkStack(core.Stack):
             cluster_name='FargateCluster',
         )
 
-        # Create fargate resources
+        # Create fargate resources for each microservice
         services = []
         target_groups = []
         for indx, container in enumerate(config['containers']):
+
+            # Get ECR repository from name
             ecr_repo = ecr.Repository.from_repository_name(self, 'ServiceRepo'+str(indx), container['ecr_repo'])
+
+            # Create task definition and add the container from ECR
             task_definition = ecs.FargateTaskDefinition(self, 'ServiceTaskDefinition'+str(indx),
                 cpu=1024,
                 memory_limit_mib=2048
@@ -93,6 +94,8 @@ class FargateCdkStack(core.Stack):
                     host_port=80
                 )
             )
+
+            # Create service in private subnets
             service = ecs.FargateService(self, 'ServiceFargateService'+str(indx),
                 task_definition=task_definition,
                 assign_public_ip=False,
@@ -103,6 +106,7 @@ class FargateCdkStack(core.Stack):
             )
             services.append(service)
 
+            # Set up ALB target group and set Fargate service as target
             target_group = elb.ApplicationTargetGroup(self, 'ServiceTargetGroup'+str(indx),
                 port=80,
                 vpc=vpc,
@@ -115,6 +119,7 @@ class FargateCdkStack(core.Stack):
             )
             target_groups.append(target_group)
 
+            # Add the path pattern rule for the listener
             alblistenerrule = elb.ApplicationListenerRule(self, 'ListenerRule'+str(indx),
                 path_pattern=container['alb_routing_path'],
                 priority=indx+1,
