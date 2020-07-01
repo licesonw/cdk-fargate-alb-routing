@@ -41,7 +41,7 @@ The structure of the file is as follows:
 }
 ```
 
-Make sure that you container serves the content in the corresponding path. To try out this infrastructure, you can set up a ngninx container that serves a static HTML page. To serve a single static file from all URL paths, configure nginx as:
+Make sure that you container serves the content in the corresponding path. To try out this infrastructure quickly, you can set up a several ngninx images that serve a static HTML page. To serve a single static file from all URL paths, copy a different `index.html` to `/usr/share/nginx/html` for each Docker image and configure nginx as:
 ```nginx
 server {
     listen 80;
@@ -51,6 +51,8 @@ server {
     }
 }
 ```
+
+Then, push you images to ECR following [this](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) tutorial.
 
 Finally, deploy the stack with the CDK command.
 ```bash
