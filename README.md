@@ -41,8 +41,7 @@ The structure of the config file is as follows:
             "alb_routing_path": "/service2/*",
             "num_tasks": 3,
             "service_discovery_service_name": "service2"
-        },
-        ...
+        }
     ]
 }
 ```
