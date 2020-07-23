@@ -3,7 +3,7 @@ from aws_cdk import (
     aws_ec2 as ec2, 
     aws_elasticloadbalancingv2 as elb, 
     aws_ecs as ecs,
-    aws_ecr as ecr,
+    aws_servicediscovery as sd
 )
 import json
 
@@ -51,7 +51,7 @@ class FargateCdkStack(core.Stack):
             default_action=elb.ListenerAction.fixed_response(
                 status_code=200,
                 content_type='text/plain',
-                message_body='Default action'
+                message_body='default action'
             )
         )
 
@@ -64,6 +64,10 @@ class FargateCdkStack(core.Stack):
             peer=webSG,
             connection=ec2.Port.tcp(80)
         )
+        fargateSG.add_ingress_rule(
+            peer=fargateSG,
+            connection=ec2.Port.tcp(80)
+        )
 
         # Create fargate cluster
         fargate_cluster = ecs.Cluster(self, 'FargateCluster',
@@ -71,22 +75,23 @@ class FargateCdkStack(core.Stack):
             cluster_name='FargateCluster',
         )
 
+        # Set up service discovery
+        namespace = sd.PrivateDnsNamespace(self, 'PrivateDNSNamespace',
+            name=config['service_discovery_namespace'],
+            vpc=vpc
+        )
+
         # Create fargate resources for each microservice
-        services = []
-        target_groups = []
         for indx, s in enumerate(config['services']):
 
-            # Get ECR repository from name
-            ecr_repo = ecr.Repository.from_repository_name(self, 'ServiceRepo'+str(indx), s['ecr_repo'])
-
-            # Create task definition and add the container from ECR
+            # Create task definition and add the container from the repo
             task_definition = ecs.FargateTaskDefinition(self, 'ServiceTaskDefinition'+str(indx),
                 cpu=1024,
                 memory_limit_mib=2048
             )
             cont = task_definition.add_container('ServiceContainer'+str(indx),
-                image=ecs.ContainerImage.from_ecr_repository(ecr_repo),
-                environment={"region": config['region']}
+                image=ecs.ContainerImage.from_registry(s['repo']),
+                environment={"REGION": config['region']}
             )
             cont.add_port_mappings(
                 ecs.PortMapping(
@@ -104,7 +109,11 @@ class FargateCdkStack(core.Stack):
                 cluster=fargate_cluster,
                 desired_count=s['num_tasks']
             )
-            services.append(service)
+            service.enable_cloud_map(
+                cloud_map_namespace=namespace,
+                dns_record_type=sd.DnsRecordType.SRV,
+                name=s['service_discovery_service_name']
+            )
 
             # Set up ALB target group and set Fargate service as target
             target_group = elb.ApplicationTargetGroup(self, 'ServiceTargetGroup'+str(indx),
@@ -117,7 +126,6 @@ class FargateCdkStack(core.Stack):
                     container_port=80
                 )]
             )
-            target_groups.append(target_group)
 
             # Add the path pattern rule for the listener
             alblistenerrule = elb.ApplicationListenerRule(self, 'ListenerRule'+str(indx),

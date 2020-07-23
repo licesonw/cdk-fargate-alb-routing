@@ -1,18 +1,21 @@
 {
     "region": "eu-central-1",
     "cidr": "10.0.0.0/16",
+    "service_discovery_namespace": "cdkapps.local",
     "services": [
         {
             "service_name": "service1",
-            "ecr_repo": "service1-nginx",
+            "repo": "licesonw/service1-nginx",
             "alb_routing_path": "/service1/*",
-            "num_tasks": 2
+            "num_tasks": 2,
+            "service_discovery_service_name": "s1"
         },
         {
             "service_name": "service2",
-            "ecr_repo": "service2-nginx",
+            "repo": "licesonw/service2-nginx",
             "alb_routing_path": "/service2/*",
-            "num_tasks": 3
+            "num_tasks": 3,
+            "service_discovery_service_name": "s2"
         }
     ]
 }
