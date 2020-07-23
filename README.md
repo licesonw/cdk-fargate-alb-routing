@@ -1,7 +1,7 @@
 
 # Path-based microservices routing with ALB and AWS Fargate
 
-This CDK app allows you to easily deploy Docker images that reside in ECR with AWS Fargate behind an Application Load Balancer with path-based routing.
+This CDK app allows you to easily deploy Docker images (either in ECR or Docker Hub) with AWS Fargate behind an Application Load Balancer with path-based routing. Additionally, the app will set up a private DNS namespace with Route 53 and AWS CloudMap to enable service discovery and allow for standardized communication between services.
 
 ## Architecture
 
@@ -12,31 +12,37 @@ This CDK app allows you to easily deploy Docker images that reside in ECR with A
 First, set up the configuration file `fargate_config.json` to pass the parameters of your microservices application. You can define the following parameters:
 
 * `"cidr"`: The cidr block for the VPC that is created for the cluster
-* `"services"`: An array of service objects, each service defines one of your dockerized microservices
+* `"service_discovery_namespace"`: The private DNS namespace that defines under which private domain your services / individual containers are reachable.
+* `"services"`: An array of service objects, each service defines one of your dockerized microservices.
 * `"service_name"`: The name of the microservice
-* `"ecr_repo"`: The name of the ECR repository where the Docker images resides. The app will always take the `:latest` tag, unless specified otherwise.
+* `"repo"`: The name of the repository (DockerHub, ECR or others) where the Docker images resides. The app will always take the `:latest` tag, unless specified otherwise.
 * `"alb_routing_path"`: The URL path that defines to which service the load balancer will route the request
 * `"num_tasks"`: The number of desired tasks per service
+* `"service_discovery_service_name"`: Under which subdomain your service will be registered with the Route 53 namespace.
 
 
-The structure of the file is as follows:
+The structure of the config file is as follows:
 ```json
 {
     "region": "eu-central-1",
     "cidr": "10.0.0.0/16",
+    "service_discovery_namespace": "cdkapps.local",
     "services": [
         {
             "service_name": "service1",
-            "ecr_repo": "service1-nginx",
+            "repo": "service1-nginx",
             "alb_routing_path": "/service1/*",
-            "num_tasks": 2
+            "num_tasks": 2,
+            "service_discovery_service_name": "service1"
         },
         {
             "service_name": "service2",
-            "ecr_repo": "service2-nginx",
+            "repo": "service2-nginx",
             "alb_routing_path": "/service2/*",
-            "num_tasks": 3
-        }
+            "num_tasks": 3,
+            "service_discovery_service_name": "service2"
+        },
+        ...
     ]
 }
 ```
